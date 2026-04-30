@@ -49,8 +49,10 @@ public function main() returns error? {
     }
 
     // 3. Schema-driven envelope-only parse via the generated typed wrapper.
-    json envHeaders = check d03orders:headersFromEdiString(ediText);
-    io:println("Schema-driven headers JSON: ", envHeaders);
+    //    Returns a fully typed `ORDERSHeaders` record — no `json` on the surface.
+    d03orders:ORDERSHeaders envHeaders = check d03orders:headersFromEdiString(ediText);
+    io:println("Schema-driven UNB control reference: ",
+            envHeaders.interchange.interchange_header.control_reference);
 
     // 4. Hierarchical interchange parse with fail-safe per-transaction body.
     //    All envelope segments and bodies are typed (no `json` on the surface).
