@@ -66,4 +66,12 @@ public function main() returns error? {
         }
         io:println("  - parsed body. BGM: ", parsed.Beginning_of_message);
     }
+
+    // 5. Write-side round-trip via the typed envelope. Inverse of
+    //    `interchangeFromEdiString`. The result re-parses cleanly through
+    //    the same `interchangeFromEdiString` call.
+    string written = check d03orders:interchangeToEdiString(ix);
+    io:println("Round-tripped ", written.length(), " bytes of EDI text.");
+    d03orders:ORDERSInterchange reparsed = check d03orders:interchangeFromEdiString(written);
+    io:println("Re-parsed interchange has ", reparsed.transactions.length(), " transaction(s).");
 }

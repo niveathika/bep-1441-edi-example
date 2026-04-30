@@ -79,12 +79,48 @@ public isolated function interchangeFromEdiString(string ediText) returns ORDERS
         return {interchangeHeader: ih, transactions: txns, interchangeTrailer: it};
 }
 
+# Serialise a fully populated ORDERSInterchange into EDI text. Inverse of
+# interchangeFromEdiString. A transaction whose body is an error cannot
+# be serialised — filter or replace such transactions before calling.
+#
+# + msg - The interchange to serialise
+# + return - EDI text, or error
+public isolated function interchangeToEdiString(ORDERSInterchange msg) returns string|error {
+    edi:EdiSchema ediSchema = check edi:getSchema(schemaJson);
+    edi:EdiInterchange raw;
+    {
+        edi:EdiTransaction[] rawTxns = [];
+        foreach var t in msg.transactions {
+            json|error body = unwrapORDERSBody(t.body);
+            rawTxns.push({
+                transactionHeader: t.transactionHeader.toJson(),
+                body: body,
+                transactionTrailer: t.transactionTrailer.toJson()
+            });
+        }
+        edi:EdiInterchange built = {
+            interchangeHeader: msg.interchangeHeader.toJson(),
+            transactions: rawTxns,
+            interchangeTrailer: msg.interchangeTrailer.toJson()
+        };
+        raw = built;
+    }
+    return edi:interchangeToEdiString(raw, ediSchema);
+}
+
 
 isolated function convertORDERSBody(json|error raw) returns ORDERS|error {
     if raw is error {
         return raw;
     }
     return raw.cloneWithType();
+}
+
+isolated function unwrapORDERSBody(ORDERS|error typed) returns json|error {
+    if typed is error {
+        return typed;
+    }
+    return typed.toJson();
 }
 
 public type DOCUMENT_MESSAGE_NAME_GType record {|
